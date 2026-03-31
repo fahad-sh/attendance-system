@@ -1,0 +1,16 @@
+# Never push these to GitHub
+.env
+*.pem
+*.key
+
+# Python
+_pycache_/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/build/
+
+# Docker
+*.log
