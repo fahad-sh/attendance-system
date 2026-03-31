@@ -12,7 +12,7 @@ jobs:
     steps:
       # Step 1: Download your code onto the Actions runner
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 2: SSH into your EC2 and run deployment commands
       - name: Deploy via SSH
