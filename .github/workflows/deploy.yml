@@ -1,8 +1,4 @@
-# paste the new code, save with Ctrl+X → Y → Enter
-
-git add .github/workflows/deploy.yml
-git commit -m "fix: upgrade ssh-action and clean up workflow"
-git push origin mainname: Deploy to EC2
+name: Deploy to EC2
 
 on:
   push:
@@ -11,7 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
