@@ -1,4 +1,4 @@
-name: Deploy to EC2
+yamlname: Deploy to EC2
 
 on:
   push:
@@ -15,20 +15,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
+      - name: Create SSH directory
+        run: mkdir -p ~/.ssh
+
+      - name: Write SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_KEY }}
         run: |
-          mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Check key format
-        run: |
+          echo "Key file size:"
+          wc -c ~/.ssh/deploy_key
+          echo "First line:"
           head -1 ~/.ssh/deploy_key
+          echo "Last line:"
           tail -1 ~/.ssh/deploy_key
-          wc -l ~/.ssh/deploy_key
+
+      - name: Scan host key
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "known_hosts content:"
+          cat ~/.ssh/known_hosts
 
       - name: Deploy to server
         run: |
