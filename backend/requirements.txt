@@ -6,7 +6,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.1
 python-multipart==0.0.9
-pydantic==2.6.4
+pydantic[email]==2.6.4
 pandas==2.2.1
 openpyxl==3.1.2
 numpy==1.26.4
@@ -14,3 +14,4 @@ pillow==10.2.0
 opencv-python-headless==4.9.0.80
 mediapipe==0.10.9
 scikit-learn==1.4.1.post1
+email-validator==2.1.1
