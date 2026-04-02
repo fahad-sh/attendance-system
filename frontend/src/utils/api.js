@@ -1,37 +1,31 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://43.205.98.145.nip.io/api'
+  baseURL: 'http://43.205.98.145.nip.io/api'
 });
 
-// Attach token to every request automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Auth
 export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
 export const getMe = () => API.get('/auth/me');
 
-// Attendance
 export const checkIn = () => API.post('/attendance/checkin');
 export const checkOut = () => API.post('/attendance/checkout');
 export const getToday = () => API.get('/attendance/today');
 export const getMyHistory = () => API.get('/attendance/my-history');
 
-// Face
 export const registerFace = (image) => API.post('/face/register', { image });
 export const verifyFace = (image) => API.post('/face/verify', { image });
 
-// Reports
 export const getMySummary = () => API.get('/reports/summary');
 export const applyLeave = (data) => API.post(`/reports/leave?reason=${data.reason}&from_date=${data.from_date}&to_date=${data.to_date}`);
 export const getMyLeaves = () => API.get('/reports/leave/my');
 
-// Admin
 export const getDashboard = () => API.get('/admin/dashboard');
 export const getAllEmployees = () => API.get('/admin/employees');
 export const deleteEmployee = (id) => API.delete(`/admin/employees/${id}`);
