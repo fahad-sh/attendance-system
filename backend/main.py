@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import router as auth_router
 from routes.attendance import router as attendance_router
 from routes.face import router as face_router
+from routes.admin import router as admin_router
+from routes.reports import router as reports_router
 
 app = FastAPI(
     title="Attendance Management System",
@@ -21,6 +23,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(attendance_router)
 app.include_router(face_router)
+app.include_router(admin_router)
+app.include_router(reports_router)
 
 @app.get("/")
 def root():
