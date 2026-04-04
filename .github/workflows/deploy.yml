@@ -36,12 +36,26 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Copy all backend files to server
+        run: |
+          scp -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -r backend/ \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/attendance-system/
+
       - name: Copy built React files to server
         run: |
           scp -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -r frontend/build \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/attendance-system/frontend/
+
+      - name: Copy config files to server
+        run: |
+          scp -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              docker-compose.yml nginx/nginx.conf \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/attendance-system/
 
       - name: Deploy to server
         run: |
@@ -51,7 +65,6 @@ jobs:
               -o ServerAliveCountMax=20 \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
               "cd ~/attendance-system && \
-               git pull origin main && \
                docker compose down && \
                docker compose up -d --build && \
                docker system prune -f && \
