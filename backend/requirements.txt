@@ -16,3 +16,4 @@ opencv-python-headless==4.9.0.80
 mediapipe==0.10.9
 scikit-learn==1.4.1.post1
 email-validator==2.1.1
+pytz==2024.1

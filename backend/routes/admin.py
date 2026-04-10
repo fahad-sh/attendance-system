@@ -218,3 +218,24 @@ async def update_leave(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Leave request not found")
     return {"message": f"Leave {status} successfully"}
+
+@router.get("/pending-admins")
+async def get_pending_admins(admin: dict = Depends(require_admin)):
+    cursor = users_collection.find({"admin_pending": True})
+    pending = []
+    async for user in cursor:
+        pending.append({
+            "id": str(user["_id"]),
+            "full_name": user["full_name"],
+            "email": user["email"],
+            "department": user["department"]
+        })
+    return pending
+
+@router.put("/approve-admin/{user_id}")
+async def approve_admin(user_id: str, admin: dict = Depends(require_admin)):
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"role": "admin", "admin_pending": False}}
+    )
+    return {"message": "User approved as admin"}

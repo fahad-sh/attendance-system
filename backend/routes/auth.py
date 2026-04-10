@@ -7,27 +7,48 @@ from bson import ObjectId
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+SUPER_ADMIN_EMAIL = "fahad@test.com"
+
 @router.post("/register")
 async def register(user: UserRegister):
     existing = await users_collection.find_one({"email": user.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    role = user.role
+    admin_pending = False
+
+    if role == "admin":
+        if user.email != SUPER_ADMIN_EMAIL:
+            role = "employee"
+            admin_pending = True
+
     new_user = {
         "full_name": user.full_name,
         "email": user.email,
         "password": hash_password(user.password),
         "department": user.department,
-        "role": user.role,
+        "role": role,
+        "admin_pending": admin_pending,
         "face_registered": False,
         "created_at": datetime.utcnow()
     }
+
     result = await users_collection.insert_one(new_user)
+
+    if admin_pending:
+        raise HTTPException(
+            status_code=403,
+            detail="Please get approval from the previous admin to be registered as admin."
+        )
+
     token = create_access_token({
         "user_id": str(result.inserted_id),
         "email": user.email,
-        "role": user.role,
+        "role": role,
         "full_name": user.full_name
     })
+
     return {
         "message": "Registration successful",
         "access_token": token,
@@ -37,7 +58,7 @@ async def register(user: UserRegister):
             "full_name": user.full_name,
             "email": user.email,
             "department": user.department,
-            "role": user.role,
+            "role": role,
             "face_registered": False
         }
     }
@@ -47,12 +68,14 @@ async def login(user: UserLogin):
     db_user = await users_collection.find_one({"email": user.email})
     if not db_user or not verify_password(user.password, db_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
     token = create_access_token({
         "user_id": str(db_user["_id"]),
         "email": db_user["email"],
         "role": db_user["role"],
         "full_name": db_user["full_name"]
     })
+
     return {
         "message": "Login successful",
         "access_token": token,

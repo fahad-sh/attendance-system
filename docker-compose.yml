@@ -1,43 +1,41 @@
 version: "3.9"
 
 services:
-
-  # 1. React Frontend
   frontend:
     build: ./frontend
     restart: always
     networks:
       - app-network
 
-  # 2. FastAPI Backend
   backend:
     build: ./backend
     restart: always
     env_file: .env
+    volumes:
+      - attendance_photos:/app/attendance_photos
     depends_on:
       - mongo
     networks:
       - app-network
 
-  # 3. MongoDB Database
   mongo:
     image: mongo:6
     restart: always
     env_file: .env
     volumes:
-      - mongo_data:/data/db   # data persists even if container restarts
+      - mongo_data:/data/db
     networks:
       - app-network
 
-  # 4. Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     restart: always
     ports:
-      - "80:80"      # HTTP
-      - "443:443"    # HTTPS (for later)
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - attendance_photos:/app/attendance_photos
     depends_on:
       - frontend
       - backend
@@ -50,3 +48,4 @@ networks:
 
 volumes:
   mongo_data:
+  attendance_photos:
