@@ -5,86 +5,109 @@ import { registerFace, verifyFace } from '../utils/api';
 
 export default function MarkAttendance() {
   const webcamRef = useRef(null);
-  const [status, setStatus] = useState('');
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const initials = user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const capture = async (action) => {
     const image = webcamRef.current?.getScreenshot();
-    if (!image) { setError('Could not capture image'); return; }
+    if (!image) { setStatus('error'); setMessage('Could not capture image. Check camera permissions.'); return; }
     setLoading(true);
-    setError('');
-    setStatus('');
+    setStatus('processing');
+    setMessage('');
     try {
       let res;
       if (action === 'register') {
         res = await registerFace(image);
-        setStatus('✅ Face registered successfully!');
+        setStatus('success');
+        setMessage('Face registered! You can now mark attendance using face verification.');
         const updatedUser = {...user, face_registered: true};
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } else {
         res = await verifyFace(image);
-        setStatus(`✅ ${res.data.message} — ${res.data.action === 'checkin' ? 'Status: ' + res.data.status : 'Hours worked: ' + res.data.hours_worked}`);
+        setStatus('success');
+        const action_type = res.data.action === 'checkin' ? 'Check-in' : 'Check-out';
+        const extra = res.data.action === 'checkin' ? `Status: ${res.data.status}` : `Hours worked: ${res.data.hours_worked}`;
+        setMessage(`${action_type} successful! ${extra}`);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong');
+      setStatus('error');
+      setMessage(err.response?.data?.detail || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <button onClick={() => navigate('/dashboard')} style={styles.back}>← Back</button>
-        <h2 style={styles.title}>Mark Attendance</h2>
-        <p style={styles.subtitle}>Look directly at the camera in good lighting</p>
-
-        <div style={styles.webcamWrapper}>
-          <Webcam
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            style={styles.webcam}
-            videoConstraints={{ width: 400, height: 300, facingMode: 'user' }}
-          />
+    <div className="page-container fade-in">
+      <nav className="navbar">
+        <span className="navbar-brand">AttendPro</span>
+        <div className="navbar-right">
+          <div className="avatar">{initials}</div>
         </div>
+      </nav>
+      <div className="content">
+        <button onClick={() => navigate('/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#1e3a5f', fontSize: '14px', fontWeight: '500', marginBottom: '20px', padding: 0 }}>
+          ← Back to dashboard
+        </button>
+        <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+          <div className="card">
+            <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '4px', color: '#1a202c' }}>Mark Attendance</h2>
+            <p style={{ color: '#718096', fontSize: '14px', marginBottom: '24px' }}>Face verification · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
 
-        {status && <div style={styles.success}>{status}</div>}
-        {error && <div style={styles.error}>{error}</div>}
+            {status === 'success' ? (
+              <div className="checkin-success">
+                <div className="checkin-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#166534', marginBottom: '8px' }}>Success!</h3>
+                <p style={{ color: '#166534', fontSize: '14px', marginBottom: '20px' }}>{message}</p>
+                <button className="btn btn-primary" onClick={() => { setStatus('idle'); setMessage(''); }}>Mark again</button>
+              </div>
+            ) : (
+              <>
+                <div className="webcam-wrapper" style={{ marginBottom: '16px' }}>
+                  <Webcam ref={webcamRef} screenshotFormat="image/jpeg" style={{ width: '100%', display: 'block', maxHeight: '320px', objectFit: 'cover' }} videoConstraints={{ width: 480, height: 320, facingMode: 'user' }} />
+                  <div className="webcam-overlay">
+                    <div className="face-guide"></div>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '11px', padding: '4px 10px', borderRadius: '20px' }}>
+                    {loading ? 'Processing...' : 'Camera active'}
+                  </div>
+                </div>
 
-        <div style={styles.buttons}>
-          {!user.face_registered && (
-            <button style={styles.btnSecondary} onClick={() => capture('register')} disabled={loading}>
-              {loading ? 'Processing...' : '📷 Register Face'}
-            </button>
-          )}
-          <button style={styles.btnPrimary} onClick={() => capture('verify')} disabled={loading}>
-            {loading ? 'Verifying...' : '✅ Check In / Check Out'}
-          </button>
+                {status === 'error' && <div className="alert alert-error">{message}</div>}
+                {status === 'processing' && (
+                  <div className="alert alert-info" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '16px', height: '16px', border: '2px solid #93c5fd', borderTopColor: '#1e40af', borderRadius: '50%', animation: 'ripple 0.8s linear infinite', flexShrink: 0 }}></div>
+                    Verifying your face...
+                  </div>
+                )}
+
+                {!user.face_registered && (
+                  <div className="alert alert-info" style={{ marginBottom: '16px' }}>
+                    Register your face first before marking attendance
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {!user.face_registered && (
+                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => capture('register')} disabled={loading}>
+                      Register Face
+                    </button>
+                  )}
+                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => capture('verify')} disabled={loading}>
+                    {loading ? 'Verifying...' : 'Check In / Check Out'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-
-        {!user.face_registered && (
-          <p style={styles.hint}>⚠️ Register your face first before marking attendance</p>
-        )}
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', background: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' },
-  card: { background: 'white', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '100%', boxShadow: '0 2px 20px rgba(0,0,0,0.1)' },
-  back: { background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '16px', marginBottom: '16px', padding: 0 },
-  title: { fontSize: '24px', color: '#1a1a2e', margin: '0 0 8px' },
-  subtitle: { color: '#666', marginBottom: '24px' },
-  webcamWrapper: { borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' },
-  webcam: { width: '100%', display: 'block' },
-  buttons: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-  btnPrimary: { flex: 1, padding: '14px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' },
-  btnSecondary: { flex: 1, padding: '14px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' },
-  success: { background: '#d1fae5', color: '#065f46', padding: '12px', borderRadius: '8px', marginBottom: '16px', textAlign: 'center' },
-  error: { background: '#fee2e2', color: '#dc2626', padding: '12px', borderRadius: '8px', marginBottom: '16px', textAlign: 'center' },
-  hint: { color: '#f59e0b', fontSize: '14px', marginTop: '12px', textAlign: 'center' }
-};

@@ -8,13 +8,16 @@ export default function AdminDashboard() {
   const [todayRecords, setTodayRecords] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const initials = user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'A';
 
   useEffect(() => {
-    getDashboard().then(r => setDashboard(r.data));
-    getAllEmployees().then(r => setEmployees(r.data));
-    getTodaysAttendance().then(r => setTodayRecords(r.data));
-    getLeaves().then(r => setLeaves(r.data));
+    getDashboard().then(r => setDashboard(r.data)).catch(() => {});
+    getAllEmployees().then(r => setEmployees(r.data)).catch(() => {});
+    getTodaysAttendance().then(r => setTodayRecords(r.data)).catch(() => {});
+    getLeaves().then(r => setLeaves(r.data)).catch(() => {});
   }, []);
 
   const handleLeave = async (id, status) => {
@@ -22,8 +25,8 @@ export default function AdminDashboard() {
     getLeaves().then(r => setLeaves(r.data));
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete this employee?')) {
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Delete ${name}?`)) {
       await deleteEmployee(id);
       getAllEmployees().then(r => setEmployees(r.data));
     }
@@ -33,143 +36,164 @@ export default function AdminDashboard() {
     const today = new Date().toISOString().slice(0, 10);
     const res = await exportCSV('2024-01-01', today);
     const url = window.URL.createObjectURL(new Blob([res.data]));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'attendance_report.csv';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'attendance_report.csv'; a.click();
   };
 
-  const tabs = ['overview', 'today', 'employees', 'leaves'];
+  const filteredEmployees = employees.filter(e =>
+    e.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    e.email.toLowerCase().includes(search.toLowerCase()) ||
+    e.department.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const presentIds = new Set(todayRecords.filter(r => r.check_in).map(r => r.user_id));
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Admin Dashboard</h2>
-        <div style={styles.headerBtns}>
-          <button onClick={handleExport} style={styles.exportBtn}>⬇️ Export CSV</button>
-          <button onClick={() => { localStorage.clear(); navigate('/login'); }} style={styles.logoutBtn}>Logout</button>
+    <div className="page-container fade-in">
+      <nav className="navbar">
+        <span className="navbar-brand">AttendPro Admin</span>
+        <div className="navbar-right">
+          <span style={{ color: '#8ab4d4', fontSize: '13px' }}>Administrator</span>
+          <div className="avatar">{initials}</div>
+          <button onClick={() => { localStorage.clear(); navigate('/login'); }} style={{ background:'none',border:'1px solid rgba(255,255,255,0.2)',color:'white',padding:'6px 14px',borderRadius:'6px',fontSize:'13px' }}>Logout</button>
         </div>
-      </div>
-
-      <div style={styles.tabs}>
-        {tabs.map(t => (
-          <button key={t} onClick={() => setActiveTab(t)}
-            style={{...styles.tab, ...(activeTab === t ? styles.activeTab : {})}}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+      </nav>
+      <div className="content">
+        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px' }}>
+          <div>
+            <h2 style={{ fontSize:'20px',fontWeight:'700',color:'#1a202c' }}>Admin Dashboard</h2>
+            <p style={{ color:'#718096',fontSize:'13px' }}>{new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
+          </div>
+          <button className="btn btn-primary" onClick={handleExport} style={{ display:'flex',alignItems:'center',gap:'8px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Export CSV
           </button>
-        ))}
-      </div>
+        </div>
 
-      {activeTab === 'overview' && dashboard && (
-        <div style={styles.grid}>
-          {[
-            { label: 'Total Employees', value: dashboard.total_employees, color: '#4f46e5' },
-            { label: 'Present Today', value: dashboard.present_today, color: '#10b981' },
-            { label: 'Absent Today', value: dashboard.absent_today, color: '#ef4444' },
-            { label: 'Late Today', value: dashboard.late_today, color: '#f59e0b' },
-            { label: 'Pending Leaves', value: dashboard.pending_leaves, color: '#8b5cf6' },
-          ].map((item, i) => (
-            <div key={i} style={{...styles.card, borderTop: `4px solid ${item.color}`}}>
-              <p style={styles.cardLabel}>{item.label}</p>
-              <p style={styles.cardValue}>{item.value}</p>
+        {dashboard && (
+          <div className="stat-grid" style={{ marginBottom:'20px' }}>
+            <div className="stat-card" style={{ borderTop:'3px solid #1e3a5f' }}>
+              <p className="stat-label">Total employees</p>
+              <p className="stat-value">{dashboard.total_employees}</p>
             </div>
+            <div className="stat-card" style={{ borderTop:'3px solid #22c55e' }}>
+              <p className="stat-label">Present today</p>
+              <p className="stat-value" style={{color:'#166534'}}>{dashboard.present_today}</p>
+            </div>
+            <div className="stat-card" style={{ borderTop:'3px solid #ef4444' }}>
+              <p className="stat-label">Absent today</p>
+              <p className="stat-value" style={{color:'#dc2626'}}>{dashboard.absent_today}</p>
+            </div>
+            <div className="stat-card" style={{ borderTop:'3px solid #f59e0b' }}>
+              <p className="stat-label">Late today</p>
+              <p className="stat-value" style={{color:'#92400e'}}>{dashboard.late_today}</p>
+            </div>
+            <div className="stat-card" style={{ borderTop:'3px solid #8b5cf6' }}>
+              <p className="stat-label">Pending leaves</p>
+              <p className="stat-value" style={{color:'#6d28d9'}}>{dashboard.pending_leaves}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="tab-nav">
+          {['overview','employees','leaves'].map(t => (
+            <button key={t} className={`tab-btn ${activeTab===t?'active':''}`} onClick={() => setActiveTab(t)}>
+              {t.charAt(0).toUpperCase()+t.slice(1)}
+              {t==='leaves' && leaves.filter(l=>l.status==='pending').length > 0 && (
+                <span style={{ marginLeft:'6px',background:'#ef4444',color:'white',fontSize:'10px',padding:'1px 6px',borderRadius:'99px' }}>
+                  {leaves.filter(l=>l.status==='pending').length}
+                </span>
+              )}
+            </button>
           ))}
         </div>
-      )}
 
-      {activeTab === 'today' && (
-        <div style={styles.section}>
-          <h3>Today's Attendance ({todayRecords.length} records)</h3>
-          <table style={styles.table}>
-            <thead><tr style={styles.thead}><th>Name</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Face Verified</th></tr></thead>
-            <tbody>
-              {todayRecords.map((r, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{r.full_name}</td>
-                  <td style={styles.td}>{r.check_in ? new Date(r.check_in).toLocaleTimeString() : '-'}</td>
-                  <td style={styles.td}>{r.check_out ? new Date(r.check_out).toLocaleTimeString() : '-'}</td>
-                  <td style={styles.td}><span style={{...styles.badge, background: r.status === 'present' ? '#d1fae5' : '#fef3c7'}}>{r.status}</span></td>
-                  <td style={styles.td}>{r.verified_by_face ? '✅' : '❌'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {activeTab === 'overview' && (
+          <>
+            <div className="card" style={{ marginBottom:'16px' }}>
+              <p className="card-title">Employees present today ({todayRecords.length})</p>
+              <div className="present-list">
+                {todayRecords.length === 0 ? (
+                  <p style={{ color:'#718096',fontSize:'14px',textAlign:'center',padding:'20px' }}>No attendance records yet today</p>
+                ) : todayRecords.map((r,i) => (
+                  <div key={i} className="present-item" style={{ animationDelay: `${i*0.05}s` }}>
+                    <div className="present-avatar">{r.full_name?.split(' ').map(n=>n[0]).join('').toUpperCase()}</div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontWeight:'500',fontSize:'14px',color:'#1a202c' }}>{r.full_name}</p>
+                      <p style={{ fontSize:'12px',color:'#718096' }}>
+                        In: {r.check_in ? new Date(r.check_in).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—'}
+                        {r.check_out && ` · Out: ${new Date(r.check_out).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`}
+                      </p>
+                    </div>
+                    <span className={`badge badge-${r.status}`}>{r.status}</span>
+                    <div className={`present-dot ${r.status==='present'?'dot-present':r.status==='late'?'dot-late':'dot-absent'}`}></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
-      {activeTab === 'employees' && (
-        <div style={styles.section}>
-          <h3>All Employees ({employees.length})</h3>
-          <table style={styles.table}>
-            <thead><tr style={styles.thead}><th>Name</th><th>Email</th><th>Department</th><th>Face</th><th>Action</th></tr></thead>
-            <tbody>
-              {employees.map((emp, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{emp.full_name}</td>
-                  <td style={styles.td}>{emp.email}</td>
-                  <td style={styles.td}>{emp.department}</td>
-                  <td style={styles.td}>{emp.face_registered ? '✅' : '❌'}</td>
-                  <td style={styles.td}>
-                    <button onClick={() => handleDelete(emp.id)} style={styles.deleteBtn}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {activeTab === 'employees' && (
+          <div className="card">
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px' }}>
+              <p className="card-title" style={{ margin:0 }}>All employees ({employees.length})</p>
+              <input className="form-input" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ width:'200px' }} />
+            </div>
+            <table className="table">
+              <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Face</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {filteredEmployees.map((emp,i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight:'500' }}>
+                      <div style={{ display:'flex',alignItems:'center',gap:'8px' }}>
+                        <div style={{ width:'28px',height:'28px',borderRadius:'50%',background:'#1e3a5f',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'600',flexShrink:0 }}>
+                          {emp.full_name?.split(' ').map(n=>n[0]).join('').toUpperCase()}
+                        </div>
+                        {emp.full_name}
+                      </div>
+                    </td>
+                    <td style={{ color:'#718096' }}>{emp.email}</td>
+                    <td>{emp.department}</td>
+                    <td>{emp.face_registered ? <span className="badge badge-present">Registered</span> : <span className="badge badge-absent">Not set</span>}</td>
+                    <td>{presentIds.has(emp.id) ? <span className="badge badge-present">Present</span> : <span style={{ fontSize:'12px',color:'#718096' }}>—</span>}</td>
+                    <td>
+                      <button className="btn btn-danger" style={{ padding:'4px 10px',fontSize:'12px' }} onClick={() => handleDelete(emp.id, emp.full_name)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {activeTab === 'leaves' && (
-        <div style={styles.section}>
-          <h3>Leave Requests</h3>
-          <table style={styles.table}>
-            <thead><tr style={styles.thead}><th>Name</th><th>Reason</th><th>From</th><th>To</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>
-              {leaves.map((l, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{l.full_name}</td>
-                  <td style={styles.td}>{l.reason}</td>
-                  <td style={styles.td}>{l.from_date}</td>
-                  <td style={styles.td}>{l.to_date}</td>
-                  <td style={styles.td}><span style={{...styles.badge, background: l.status === 'approved' ? '#d1fae5' : l.status === 'rejected' ? '#fee2e2' : '#fef3c7'}}>{l.status}</span></td>
-                  <td style={styles.td}>
-                    {l.status === 'pending' && (
-                      <>
-                        <button onClick={() => handleLeave(l.id, 'approved')} style={styles.approveBtn}>Approve</button>
-                        <button onClick={() => handleLeave(l.id, 'rejected')} style={styles.rejectBtn}>Reject</button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {activeTab === 'leaves' && (
+          <div className="card">
+            <p className="card-title">Leave requests</p>
+            <table className="table">
+              <thead><tr><th>Employee</th><th>Reason</th><th>From</th><th>To</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {leaves.map((l,i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight:'500' }}>{l.full_name}</td>
+                    <td>{l.reason}</td>
+                    <td>{l.from_date}</td>
+                    <td>{l.to_date}</td>
+                    <td><span className={`badge badge-${l.status}`}>{l.status}</span></td>
+                    <td>
+                      {l.status === 'pending' && (
+                        <div style={{ display:'flex',gap:'6px' }}>
+                          <button className="btn btn-success" style={{ padding:'4px 10px',fontSize:'12px' }} onClick={() => handleLeave(l.id,'approved')}>Approve</button>
+                          <button className="btn btn-danger" style={{ padding:'4px 10px',fontSize:'12px' }} onClick={() => handleLeave(l.id,'rejected')}>Reject</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', background: '#f0f2f5', padding: '24px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
-  title: { fontSize: '24px', color: '#1a1a2e', margin: 0 },
-  headerBtns: { display: 'flex', gap: '12px' },
-  exportBtn: { padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' },
-  logoutBtn: { padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' },
-  tabs: { display: 'flex', gap: '8px', marginBottom: '24px' },
-  tab: { padding: '8px 20px', border: '1px solid #ddd', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px' },
-  activeTab: { background: '#4f46e5', color: 'white', border: '1px solid #4f46e5' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' },
-  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 10px rgba(0,0,0,0.08)' },
-  cardLabel: { color: '#666', fontSize: '13px', margin: '0 0 8px' },
-  cardValue: { fontSize: '32px', fontWeight: 'bold', color: '#1a1a2e', margin: 0 },
-  section: { background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 10px rgba(0,0,0,0.08)' },
-  table: { width: '100%', borderCollapse: 'collapse', marginTop: '16px' },
-  thead: { background: '#f9fafb' },
-  td: { padding: '12px', borderBottom: '1px solid #f0f0f0', fontSize: '14px' },
-  badge: { padding: '4px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 500 },
-  deleteBtn: { padding: '4px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
-  approveBtn: { padding: '4px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', marginRight: '6px' },
-  rejectBtn: { padding: '4px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }
-};

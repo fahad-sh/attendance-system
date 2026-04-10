@@ -27,40 +27,53 @@ export default function Register() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Attendance System</h1>
-        <h2 style={styles.subtitle}>Create Account</h2>
-        {error && <div style={styles.error}>{error}</div>}
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8', padding: '20px' }}>
+      <div style={{ width: '100%', maxWidth: '480px', background: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 20px 60px rgba(0,0,0,0.1)' }} className="fade-in">
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ width: '52px', height: '52px', background: '#1e3a5f', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="white" strokeWidth="1.5"/><path d="M8 2v4M16 2v4M3 10h18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#1a202c', marginBottom: '4px' }}>Create account</h2>
+          <p style={{ color: '#718096', fontSize: '14px' }}>Join your team on AttendPro</p>
+        </div>
+        {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit}>
-          <input style={styles.input} type="text" placeholder="Full Name" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} required />
-          <input style={styles.input} type="email" placeholder="Email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
-          <input style={styles.input} type="password" placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
-          <select style={styles.input} value={form.department} onChange={e => setForm({...form, department: e.target.value})} required>
-            <option value="">Select Department</option>
-            {departments.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <select style={styles.input} value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-            <option value="employee">Employee</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
+          <div className="form-group">
+            <label className="form-label">Full name</label>
+            <input className="form-input" type="text" placeholder="John Smith" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email address</label>
+            <input className="form-input" type="email" placeholder="john@company.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input className="form-input" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">Department</label>
+              <select className="form-input" value={form.department} onChange={e => setForm({...form, department: e.target.value})} required>
+                <option value="">Select...</option>
+                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <select className="form-input" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
-        <p style={styles.link}>Already have an account? <Link to="/login">Sign In</Link></p>
+        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#718096' }}>
+          Already have an account? <Link to="/login" style={{ color: '#1e3a5f', fontWeight: '600' }}>Sign in</Link>
+        </p>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' },
-  card: { background: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 2px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' },
-  title: { textAlign: 'center', color: '#1a1a2e', marginBottom: '4px', fontSize: '24px' },
-  subtitle: { textAlign: 'center', color: '#666', marginBottom: '24px', fontSize: '18px', fontWeight: 400 },
-  input: { width: '100%', padding: '12px', marginBottom: '16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box' },
-  button: { width: '100%', padding: '12px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' },
-  error: { background: '#fee2e2', color: '#dc2626', padding: '12px', borderRadius: '8px', marginBottom: '16px', textAlign: 'center' },
-  link: { textAlign: 'center', marginTop: '16px', color: '#666' }
-};
