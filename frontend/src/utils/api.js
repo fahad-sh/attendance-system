@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://certificate-gauge-precision-translation.trycloudflare.com/api'
+  baseURL: 'https://download-curriculum-life-accomplish.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
