@@ -69,3 +69,15 @@ jobs:
                docker compose up -d --build && \
                docker system prune -f && \
                echo 'Deployment complete!'"
+
+      - name: Create .env file on server
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "cat > ~/attendance-system/.env << 'ENVEOF'
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=StrongPass123!
+MONGO_URI=${{ secrets.MONGO_URI }}
+SECRET_KEY=${{ secrets.SECRET_KEY }}
+ENVEOF"
