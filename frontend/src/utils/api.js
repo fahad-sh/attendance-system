@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://invalid-mechanisms-bite-fiction.trycloudflare.com/api'
+  baseURL:  'https://tough-gates-typically-chronicle.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
