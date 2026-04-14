@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL:  'https://tough-gates-typically-chronicle.trycloudflare.com/api'
+  baseURL: 'https://stop-definitions-jaguar-educational.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
