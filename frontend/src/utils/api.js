@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://stop-definitions-jaguar-educational.trycloudflare.com/api'
+  baseURL: 'https://pic-precise-neighbors-josh.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
