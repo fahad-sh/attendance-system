@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost/api';
-
 export default function PhotoGallery() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +10,8 @@ export default function PhotoGallery() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const token = localStorage.getItem('token');
+
+  const API_URL = `http://${window.location.hostname}/api`;
 
   useEffect(() => {
     if (user.role !== 'admin') { navigate('/dashboard'); return; }
@@ -41,9 +41,6 @@ export default function PhotoGallery() {
     } catch { setError('Failed to delete photos'); }
   };
 
-  const getPhotoSrc = (photo) =>
-    `${API_URL}/face/photos/view/${photo.id}?token=${token}`;
-
   return (
     <div style={{ minHeight: '100vh', background: '#f0f4f8' }}>
       <nav style={{ background: '#1e3a5f', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -64,14 +61,21 @@ export default function PhotoGallery() {
           </button>
         </div>
 
-        {error && <div style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>{error}</div>}
+        {error && (
+          <div style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+            {error}
+          </div>
+        )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', color: '#718096' }}>Loading photos...</div>
+          <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', color: '#718096' }}>
+            Loading photos...
+          </div>
         ) : photos.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📷</div>
-            <p style={{ color: '#718096' }}>No photos yet. Photos are captured automatically on face check-in/out.</p>
+            <p style={{ color: '#718096' }}>No photos yet.</p>
+            <p style={{ color: '#718096', fontSize: '13px', marginTop: '8px' }}>Photos are captured automatically when employees mark attendance using face verification.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
@@ -80,14 +84,11 @@ export default function PhotoGallery() {
                 style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}>
                 <div style={{ position: 'relative' }}>
                   <img
-                    src={`${API_URL}/face/photos/view/${photo.id}`}
+                    src={`${API_URL}/face/photos/view-public/${photo.id}?token=${token}`}
                     alt={photo.full_name}
-                    style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block' }}
-                    onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block', background: '#f0f4f8' }}
+                    onError={e => { e.target.style.display='none'; }}
                   />
-                  <div style={{ display: 'none', height: '180px', background: '#f0f4f8', alignItems: 'center', justifyContent: 'center', color: '#718096', fontSize: '13px' }}>
-                    No preview
-                  </div>
                   <div style={{ position: 'absolute', top: '8px', right: '8px', background: photo.action === 'checkin' ? '#dcfce7' : '#dbeafe', color: photo.action === 'checkin' ? '#166534' : '#1e40af', fontSize: '11px', fontWeight: '600', padding: '3px 8px', borderRadius: '99px' }}>
                     {photo.action === 'checkin' ? '✓ Check In' : '← Check Out'}
                   </div>
@@ -108,8 +109,11 @@ export default function PhotoGallery() {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
           <div onClick={e => e.stopPropagation()}
             style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', maxWidth: '480px', width: '100%' }}>
-            <img src={`${API_URL}/face/photos/view/${selected.id}`} alt={selected.full_name}
-              style={{ width: '100%', display: 'block', maxHeight: '400px', objectFit: 'contain', background: '#0f172a' }} />
+            <img
+              src={`${API_URL}/face/photos/view-public/${selected.id}?token=${token}`}
+              alt={selected.full_name}
+              style={{ width: '100%', display: 'block', maxHeight: '400px', objectFit: 'contain', background: '#0f172a' }}
+            />
             <div style={{ padding: '20px' }}>
               <p style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px', color: '#1a202c' }}>{selected.full_name}</p>
               <p style={{ color: '#718096', fontSize: '13px' }}>

@@ -63,8 +63,11 @@ export default function AdminDashboard() {
             <h2 style={{ fontSize:'20px',fontWeight:'700',color:'#1a202c' }}>Admin Dashboard</h2>
             <p style={{ color:'#718096',fontSize:'13px' }}>{new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
           </div>
-          <button className="btn btn-primary" onClick={handleExport} style={{ display:'flex',alignItems:'center',gap:'8px' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <div style={styles.headerBtns}>
+  <button onClick={() => navigate('/admin/photos')} style={{ padding:'8px 16px',background:'white',color:'#1e3a5f',border:'1px solid #1e3a5f',borderRadius:'8px',fontSize:'13px',cursor:'pointer' }}>📷 Photos</button>
+  <button onClick={handleExport} style={styles.exportBtn}>⬇️ Export CSV</button>
+  <button onClick={() => { localStorage.clear(); navigate('/login'); }} style={styles.logoutBtn}>Logout</button>
+</div>
             Export CSV
           </button>
         </div>
