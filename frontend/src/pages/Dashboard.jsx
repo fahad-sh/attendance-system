@@ -10,7 +10,7 @@ export default function Dashboard() {
   const initials = user.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const today_date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const today_date = new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   useEffect(() => {
     getToday().then(r => setToday(r.data)).catch(() => {});
@@ -19,85 +19,95 @@ export default function Dashboard() {
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
 
-  const getStatusText = () => {
-    if (!today || !today.checked_in) return { text: 'Not checked in', color: '#718096', bg: '#f8fafc', dot: '#cbd5e0' };
-    if (today.checked_out) return { text: 'Shift complete', color: '#166534', bg: '#dcfce7', dot: '#22c55e' };
-    return { text: 'Currently working', color: '#166534', bg: '#dcfce7', dot: '#22c55e' };
-  };
-  const status = getStatusText();
-
   return (
-    <div className="page-container fade-in">
-      <nav className="navbar">
-        <span className="navbar-brand">AttendPro</span>
-        <div className="navbar-right">
+    <div style={{ minHeight: '100vh', background: '#f0f4f8' }}>
+      <nav style={{ background: '#1e3a5f', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ color: 'white', fontSize: '18px', fontWeight: '600' }}>AttendPro</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ color: '#8ab4d4', fontSize: '13px' }}>{user.department}</span>
-          <div className="avatar">{initials}</div>
-          <button onClick={logout} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '6px 14px', borderRadius: '6px', fontSize: '13px' }}>Logout</button>
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#2d5a8e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '13px', fontWeight: '600' }}>{initials}</div>
+          <button onClick={logout} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Logout</button>
         </div>
       </nav>
-      <div className="content">
-        <div className="hero-banner">
+
+      <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
+
+        {/* Hero banner */}
+        <div style={{ background: '#1e3a5f', borderRadius: '14px', padding: '28px', marginBottom: '20px', color: 'white' }}>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', marginBottom: '4px' }}>{today_date}</p>
           <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '4px' }}>{greeting}, {user.full_name?.split(' ')[0]} 👋</h2>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px' }}>{user.role === 'admin' ? 'Administrator' : 'Employee'} · {user.department}</p>
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <p className="hero-stat-label">Present days</p>
-              <p className="hero-stat-value">{summary?.present ?? '—'}</p>
-              <p className="hero-stat-sub">This month</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginTop: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '14px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>Present days</p>
+              <p style={{ fontSize: '22px', fontWeight: '700' }}>{summary?.present ?? '—'}</p>
             </div>
-            <div className="hero-stat">
-              <p className="hero-stat-label">Hours worked</p>
-              <p className="hero-stat-value">{summary?.total_hours_worked ?? '—'}</p>
-              <p className="hero-stat-sub">Total</p>
+            <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '14px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>Hours worked</p>
+              <p style={{ fontSize: '22px', fontWeight: '700' }}>{summary?.total_hours_worked ?? '—'}</p>
             </div>
-            <div className="hero-stat">
-              <p className="hero-stat-label">On-time rate</p>
-              <p className="hero-stat-value">
-                {summary && summary.present + summary.late > 0
+            <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '14px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>On-time rate</p>
+              <p style={{ fontSize: '22px', fontWeight: '700' }}>
+                {summary && (summary.present + summary.late) > 0
                   ? Math.round((summary.present / (summary.present + summary.late)) * 100) + '%'
                   : '—'}
               </p>
-              <p className="hero-stat-sub">Punctuality</p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-          <div className="card">
-            <p className="card-title">Today's status</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: status.bg, borderRadius: '8px', marginBottom: '16px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: status.dot, flexShrink: 0 }}></div>
-              <div>
-                <p style={{ fontWeight: '600', fontSize: '14px', color: status.color }}>{status.text}</p>
-                {today?.check_in && <p style={{ fontSize: '12px', color: '#718096', marginTop: '2px' }}>In: {new Date(today.check_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>}
-                {today?.check_out && <p style={{ fontSize: '12px', color: '#718096' }}>Out: {new Date(today.check_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>}
-              </div>
+        {/* Today's timing — big and clear */}
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
+          <p style={{ fontSize: '13px', fontWeight: '600', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>Today's Attendance</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ textAlign: 'center', padding: '16px', background: today?.check_in ? '#f0fdf4' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.check_in ? '#86efac' : '#e2e8f0'}` }}>
+              <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Check In</p>
+              <p style={{ fontSize: '24px', fontWeight: '700', color: today?.check_in ? '#166534' : '#cbd5e0' }}>
+                {today?.check_in || '—'}
+              </p>
+              {today?.check_in && <p style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>IST</p>}
             </div>
-            <Link to="/attendance" className="btn btn-primary btn-full" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-              Mark Attendance
-            </Link>
-          </div>
-          <div className="card">
-            <p className="card-title">Quick actions</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <Link to="/attendance" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#2d3748', fontSize: '14px', transition: 'all 0.2s' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                Mark attendance
-              </Link>
-              <Link to="/reports" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#2d3748', fontSize: '14px', transition: 'all 0.2s' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                View my reports
-              </Link>
-              {user.role === 'admin' && (
-                <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#2d3748', fontSize: '14px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  Admin dashboard
-                </Link>
+            <div style={{ textAlign: 'center', padding: '16px', background: today?.check_out ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.check_out ? '#93c5fd' : '#e2e8f0'}` }}>
+              <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Check Out</p>
+              <p style={{ fontSize: '24px', fontWeight: '700', color: today?.check_out ? '#1e40af' : '#cbd5e0' }}>
+                {today?.check_out || '—'}
+              </p>
+              {today?.check_out && <p style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px' }}>IST</p>}
+            </div>
+            <div style={{ textAlign: 'center', padding: '16px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</p>
+              <p style={{ fontSize: '20px', fontWeight: '700', color: today?.status === 'present' ? '#166534' : today?.status === 'late' ? '#92400e' : '#718096' }}>
+                {today?.status ? today.status.charAt(0).toUpperCase() + today.status.slice(1) : 'Not in'}
+              </p>
+              {!user.face_registered && (
+                <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px' }}>⚠️ Register face</p>
               )}
             </div>
           </div>
+          <Link to="/attendance" style={{ display: 'block', textAlign: 'center', padding: '12px', background: '#1e3a5f', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '15px' }}>
+            {today?.check_in && !today?.check_out ? '🚪 Check Out Now' : today?.check_out ? '✅ Attendance Complete' : '📸 Mark Attendance'}
+          </Link>
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Link to="/reports" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📊</div>
+            <div>
+              <p style={{ fontWeight: '600', fontSize: '14px', color: '#1a202c' }}>My Reports</p>
+              <p style={{ fontSize: '12px', color: '#718096' }}>View attendance history</p>
+            </div>
+          </Link>
+          {user.role === 'admin' && (
+            <Link to="/admin" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', background: '#fef3c7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🛡️</div>
+              <div>
+                <p style={{ fontWeight: '600', fontSize: '14px', color: '#1a202c' }}>Admin Panel</p>
+                <p style={{ fontSize: '12px', color: '#718096' }}>Manage team attendance</p>
+              </div>
+            </Link>
+          )}
         </div>
       </div>
     </div>

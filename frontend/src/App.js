@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import MarkAttendance from './pages/MarkAttendance';
 import MyReports from './pages/MyReports';
 import AdminDashboard from './pages/AdminDashboard';
+import PhotoGallery from './pages/PhotoGallery';
 
 const PrivateRoute = ({ children }) => {
   return localStorage.getItem('token') ? children : <Navigate to="/login" />;
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/attendance" element={<PrivateRoute><MarkAttendance /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><MyReports /></PrivateRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/photos" element={<AdminRoute><PhotoGallery /></AdminRoute>} />
       </Routes>
     </BrowserRouter>
   );
