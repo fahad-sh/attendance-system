@@ -11,7 +11,7 @@ export default function PhotoGallery() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const token = localStorage.getItem('token');
 
-  const API_URL = `http://${window.location.hostname}/api`;
+  const API_URL = `https://${window.location.hostname}/api`;
 
   useEffect(() => {
     if (user.role !== 'admin') { navigate('/dashboard'); return; }
