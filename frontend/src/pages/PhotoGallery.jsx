@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || `http://${window.location.hostname}/api`;
+
 export default function PhotoGallery() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,8 +12,6 @@ export default function PhotoGallery() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const token = localStorage.getItem('token');
-
-  const API_URL = `https://${window.location.hostname}/api`;
 
   useEffect(() => {
     if (user.role !== 'admin') { navigate('/dashboard'); return; }
@@ -57,20 +57,14 @@ export default function PhotoGallery() {
             <p style={{ color: '#718096', fontSize: '13px', marginTop: '4px' }}>{photos.length} photos · Admin view only</p>
           </div>
           <button onClick={deleteAll} style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
-            🗑️ Delete All
+            Delete All
           </button>
         </div>
 
-        {error && (
-          <div style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-            {error}
-          </div>
-        )}
+        {error && <div style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>{error}</div>}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', color: '#718096' }}>
-            Loading photos...
-          </div>
+          <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', color: '#718096' }}>Loading photos...</div>
         ) : photos.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📷</div>
@@ -87,10 +81,10 @@ export default function PhotoGallery() {
                     src={`${API_URL}/face/photos/view-public/${photo.id}?token=${token}`}
                     alt={photo.full_name}
                     style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block', background: '#f0f4f8' }}
-                    onError={e => { e.target.style.display='none'; }}
+                    onError={e => { e.target.style.display = 'none'; }}
                   />
                   <div style={{ position: 'absolute', top: '8px', right: '8px', background: photo.action === 'checkin' ? '#dcfce7' : '#dbeafe', color: photo.action === 'checkin' ? '#166534' : '#1e40af', fontSize: '11px', fontWeight: '600', padding: '3px 8px', borderRadius: '99px' }}>
-                    {photo.action === 'checkin' ? '✓ Check In' : '← Check Out'}
+                    {photo.action === 'checkin' ? 'Check In' : 'Check Out'}
                   </div>
                 </div>
                 <div style={{ padding: '12px' }}>
