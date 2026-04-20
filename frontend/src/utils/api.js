@@ -5,7 +5,7 @@ const BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}/api`;
 
 const API = axios.create({
- baseURL: 'https://lodge-sleeve-sell-pledge.trycloudflare.com/api'
+ baseURL: 'https://sensitive-progress-locate-sorry.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
