@@ -5,7 +5,7 @@ const BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}/api`;
 
 const API = axios.create({
- baseURL: 'https://sensitive-progress-locate-sorry.trycloudflare.com/api'
+ baseURL: 'https://YOUR-NEW-TUNNEL.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
