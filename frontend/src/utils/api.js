@@ -5,7 +5,7 @@ const BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}/api`;
 
 const API = axios.create({
- baseURL: 'https://herbs-pod-governmental-raw.trycloudflare.com/api'
+ baseURL: process.env.REACT_APP_API_URL || 'https://herbs-pod-governmental-raw.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
