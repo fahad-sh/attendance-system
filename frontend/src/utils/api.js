@@ -5,7 +5,7 @@ const BASE_URL = window.location.hostname === 'localhost'
   : `http://${window.location.hostname}/api`;
 
 const API = axios.create({
- baseURL: 'https://inter-dealing-gym-cannon.trycloudflare.com/api'
+ baseURL: 'https://herbs-pod-governmental-raw.trycloudflare.com/api'
 });
 
 API.interceptors.request.use((config) => {
