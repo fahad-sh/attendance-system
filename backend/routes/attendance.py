@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database import attendance_collection
 from utils.auth import get_current_user
-from datetime import datetime, date
+from datetime import datetime
 import pytz
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
@@ -14,78 +14,85 @@ def get_ist_now():
 def get_ist_date():
     return get_ist_now().date().isoformat()
 
+def is_late(ist_time):
+    return ist_time.hour > 9 or (ist_time.hour == 9 and ist_time.minute > 30)
+
 @router.post("/checkin")
 async def check_in(current_user: dict = Depends(get_current_user)):
     today = get_ist_date()
     ist_now = get_ist_now()
     user_id = current_user["user_id"]
-
     existing = await attendance_collection.find_one({"user_id": user_id, "date": today})
     if existing and existing.get("check_in"):
         raise HTTPException(status_code=400, detail="Already checked in today")
-
-    utc_now = datetime.utcnow()
-    status = "late" if (ist_now.hour > 9 or (ist_now.hour == 9 and ist_now.minute > 30)) else "present"
-
+    status = "late" if is_late(ist_now) else "present"
+    time_str = ist_now.strftime("%I:%M %p")
     if existing:
         await attendance_collection.update_one(
             {"user_id": user_id, "date": today},
-            {"$set": {"check_in": utc_now, "check_in_ist": ist_now.strftime("%H:%M:%S"), "status": status}}
+            {"$set": {"check_in": time_str, "status": status}}
         )
     else:
         await attendance_collection.insert_one({
             "user_id": user_id,
             "full_name": current_user["full_name"],
             "date": today,
-            "check_in": utc_now,
-            "check_in_ist": ist_now.strftime("%H:%M:%S"),
+            "check_in": time_str,
             "check_out": None,
             "status": status,
             "verified_by_face": False
         })
-
-    return {
-        "message": "Check-in successful",
-        "time_ist": ist_now.strftime("%I:%M %p IST"),
-        "status": status
-    }
+    return {"message": "Check-in successful", "time": time_str + " IST", "status": status}
 
 @router.post("/checkout")
 async def check_out(current_user: dict = Depends(get_current_user)):
     today = get_ist_date()
     ist_now = get_ist_now()
     user_id = current_user["user_id"]
-
     existing = await attendance_collection.find_one({"user_id": user_id, "date": today})
     if not existing or not existing.get("check_in"):
         raise HTTPException(status_code=400, detail="You haven't checked in today")
     if existing.get("check_out"):
         raise HTTPException(status_code=400, detail="Already checked out today")
-
-    utc_now = datetime.utcnow()
+    time_str = ist_now.strftime("%I:%M %p")
     await attendance_collection.update_one(
         {"user_id": user_id, "date": today},
-        {"$set": {"check_out": utc_now, "check_out_ist": ist_now.strftime("%H:%M:%S")}}
+        {"$set": {"check_out": time_str}}
     )
-
-    hours = round((utc_now - existing["check_in"]).seconds / 3600, 2)
-    return {
-        "message": "Check-out successful",
-        "time_ist": ist_now.strftime("%I:%M %p IST"),
-        "hours_worked": hours
-    }
+    return {"message": "Check-out successful", "time": time_str + " IST"}
 
 @router.get("/today")
 async def get_today(current_user: dict = Depends(get_current_user)):
     today = get_ist_date()
-    record = await attendance_collection.find_one({"user_id": current_user["user_id"], "date": today})
+    record = await attendance_collection.find_one({
+        "user_id": current_user["user_id"],
+        "date": today
+    })
     if not record:
-        return {"checked_in": False, "checked_out": False, "date": today}
+        return {
+            "checked_in": False,
+            "checked_out": False,
+            "check_in": None,
+            "check_out": None,
+            "status": None,
+            "date": today
+        }
+
+    # Get check_in value - handle both string and datetime formats
+    check_in = record.get("check_in")
+    check_out = record.get("check_out")
+
+    # Convert datetime objects to IST string if needed
+    if check_in and isinstance(check_in, datetime):
+        check_in = check_in.replace(tzinfo=pytz.utc).astimezone(IST).strftime("%I:%M %p")
+    if check_out and isinstance(check_out, datetime):
+        check_out = check_out.replace(tzinfo=pytz.utc).astimezone(IST).strftime("%I:%M %p")
+
     return {
-        "checked_in": bool(record.get("check_in")),
-        "checked_out": bool(record.get("check_out")),
-        "check_in": record.get("check_in_ist"),
-        "check_out": record.get("check_out_ist"),
+        "checked_in": bool(check_in),
+        "checked_out": bool(check_out),
+        "check_in": check_in,
+        "check_out": check_out,
         "status": record.get("status"),
         "date": today
     }
@@ -97,10 +104,16 @@ async def my_history(current_user: dict = Depends(get_current_user)):
     ).sort("date", -1).limit(30)
     records = []
     async for record in cursor:
+        check_in = record.get("check_in")
+        check_out = record.get("check_out")
+        if check_in and isinstance(check_in, datetime):
+            check_in = check_in.replace(tzinfo=pytz.utc).astimezone(IST).strftime("%I:%M %p")
+        if check_out and isinstance(check_out, datetime):
+            check_out = check_out.replace(tzinfo=pytz.utc).astimezone(IST).strftime("%I:%M %p")
         records.append({
             "date": record["date"],
-            "check_in": record.get("check_in_ist"),
-            "check_out": record.get("check_out_ist"),
+            "check_in": check_in,
+            "check_out": check_out,
             "status": record.get("status", "present"),
             "verified_by_face": record.get("verified_by_face", False)
         })
