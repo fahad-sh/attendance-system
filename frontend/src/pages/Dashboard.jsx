@@ -13,11 +13,24 @@ export default function Dashboard() {
   const today_date = new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   useEffect(() => {
-    getToday().then(r => setToday(r.data)).catch(() => {});
+    getToday().then(r => {
+      console.log('Today API response:', r.data);
+      setToday(r.data);
+    }).catch(e => console.error('Today API error:', e));
     getMySummary().then(r => setSummary(r.data)).catch(() => {});
   }, []);
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
+
+  const getCheckInDisplay = () => {
+    if (!today || !today.checked_in) return '—';
+    return today.check_in || '—';
+  };
+
+  const getCheckOutDisplay = () => {
+    if (!today || !today.checked_out) return '—';
+    return today.check_out || '—';
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#f0f4f8' }}>
@@ -31,8 +44,6 @@ export default function Dashboard() {
       </nav>
 
       <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
-
-        {/* Hero banner */}
         <div style={{ background: '#1e3a5f', borderRadius: '14px', padding: '28px', marginBottom: '20px', color: 'white' }}>
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', marginBottom: '4px' }}>{today_date}</p>
           <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '4px' }}>{greeting}, {user.full_name?.split(' ')[0]} 👋</h2>
@@ -47,33 +58,28 @@ export default function Dashboard() {
               <p style={{ fontSize: '22px', fontWeight: '700' }}>{summary?.total_hours_worked ?? '—'}</p>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '14px' }}>
-              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>On-time rate</p>
-              <p style={{ fontSize: '22px', fontWeight: '700' }}>
-                {summary && (summary.present + summary.late) > 0
-                  ? Math.round((summary.present / (summary.present + summary.late)) * 100) + '%'
-                  : '—'}
-              </p>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '4px' }}>Late arrivals</p>
+              <p style={{ fontSize: '22px', fontWeight: '700' }}>{summary?.late ?? '—'}</p>
             </div>
           </div>
         </div>
 
-        {/* Today's timing — big and clear */}
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '600', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>Today's Attendance</p>
+          <p style={{ fontSize: '11px', fontWeight: '600', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>Today's Attendance</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ textAlign: 'center', padding: '16px', background: today?.check_in ? '#f0fdf4' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.check_in ? '#86efac' : '#e2e8f0'}` }}>
+            <div style={{ textAlign: 'center', padding: '16px', background: today?.checked_in ? '#f0fdf4' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.checked_in ? '#86efac' : '#e2e8f0'}` }}>
               <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Check In</p>
-              <p style={{ fontSize: '24px', fontWeight: '700', color: today?.check_in ? '#166534' : '#cbd5e0' }}>
-                {today?.check_in || '—'}
+              <p style={{ fontSize: '28px', fontWeight: '700', color: today?.checked_in ? '#166534' : '#cbd5e0' }}>
+                {getCheckInDisplay()}
               </p>
-              {today?.check_in && <p style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>IST</p>}
+              {today?.checked_in && <p style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>IST</p>}
             </div>
-            <div style={{ textAlign: 'center', padding: '16px', background: today?.check_out ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.check_out ? '#93c5fd' : '#e2e8f0'}` }}>
+            <div style={{ textAlign: 'center', padding: '16px', background: today?.checked_out ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: `1px solid ${today?.checked_out ? '#93c5fd' : '#e2e8f0'}` }}>
               <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Check Out</p>
-              <p style={{ fontSize: '24px', fontWeight: '700', color: today?.check_out ? '#1e40af' : '#cbd5e0' }}>
-                {today?.check_out || '—'}
+              <p style={{ fontSize: '28px', fontWeight: '700', color: today?.checked_out ? '#1e40af' : '#cbd5e0' }}>
+                {getCheckOutDisplay()}
               </p>
-              {today?.check_out && <p style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px' }}>IST</p>}
+              {today?.checked_out && <p style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px' }}>IST</p>}
             </div>
             <div style={{ textAlign: 'center', padding: '16px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <p style={{ fontSize: '11px', color: '#718096', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</p>
@@ -85,12 +91,11 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <Link to="/attendance" style={{ display: 'block', textAlign: 'center', padding: '12px', background: '#1e3a5f', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '15px' }}>
-            {today?.check_in && !today?.check_out ? '🚪 Check Out Now' : today?.check_out ? '✅ Attendance Complete' : '📸 Mark Attendance'}
+          <Link to="/attendance" style={{ display: 'block', textAlign: 'center', padding: '13px', background: '#1e3a5f', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '15px' }}>
+            {today?.checked_in && !today?.checked_out ? '🚪 Check Out Now' : today?.checked_out ? '✅ Attendance Complete' : '📸 Mark Attendance'}
           </Link>
         </div>
 
-        {/* Quick actions */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <Link to="/reports" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📊</div>
