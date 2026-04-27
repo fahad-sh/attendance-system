@@ -1,17 +1,33 @@
 from fastapi import APIRouter, Depends
 from database import attendance_collection, leaves_collection
 from utils.auth import get_current_user
-from datetime import datetime, date
-from bson import ObjectId
+from datetime import datetime
+import pytz
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
+
+IST = pytz.timezone('Asia/Kolkata')
+
+def calc_hours(check_in, check_out):
+    try:
+        if isinstance(check_in, str) and isinstance(check_out, str):
+            ci = datetime.strptime(check_in.strip(), "%I:%M %p")
+            co = datetime.strptime(check_out.strip(), "%I:%M %p")
+            diff = (co - ci).seconds / 3600
+            return diff if diff > 0 else 0
+        elif isinstance(check_in, datetime) and isinstance(check_out, datetime):
+            diff = (check_out - check_in).seconds / 3600
+            return diff if diff > 0 else 0
+    except:
+        return 0
+    return 0
 
 @router.get("/summary")
 async def my_summary(current_user: dict = Depends(get_current_user)):
     user_id = current_user["user_id"]
     cursor = attendance_collection.find({"user_id": user_id})
 
-    total = present = late = absent_days = 0
+    total = present = late = 0
     total_hours = 0.0
 
     async for record in cursor:
@@ -21,10 +37,12 @@ async def my_summary(current_user: dict = Depends(get_current_user)):
             present += 1
         elif status == "late":
             late += 1
+
         check_in = record.get("check_in")
         check_out = record.get("check_out")
+
         if check_in and check_out:
-            total_hours += (check_out - check_in).seconds / 3600
+            total_hours += calc_hours(check_in, check_out)
 
     return {
         "total_days_recorded": total,
@@ -65,6 +83,6 @@ async def my_leaves(current_user: dict = Depends(get_current_user)):
             "from_date": leave.get("from_date"),
             "to_date": leave.get("to_date"),
             "status": leave.get("status", "pending"),
-            "created_at": leave.get("created_at")
+            "created_at": str(leave.get("created_at", ""))
         })
     return leaves
